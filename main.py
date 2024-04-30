@@ -5,6 +5,7 @@ from langchain_community.callbacks.streamlit import (
     StreamlitCallbackHandler,LLMThoughtLabeler
 )
 from langchain.output_parsers import PydanticOutputParser
+
 import os
 import streamlit as st
 from models.response import Response
@@ -14,7 +15,8 @@ from langchain_community.agent_toolkits.sql.prompt import (
     SQL_FUNCTIONS_SUFFIX,
 )
 from models.custom_thought_labeler import CustomThoughLabeler
-
+import json
+import re
 
 username = os.environ["SNOWFLAKE_USERNAME"]
 password = os.environ["SNOWFLAKE_PASSWORD"]
@@ -43,18 +45,46 @@ db = get_db()
 llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True)
 parser = PydanticOutputParser(pydantic_object=Response)
 
-agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True, suffix=f"{SQL_FUNCTIONS_SUFFIX} YOU SHOULD STRICTLY FOLLOW THE FOLLOWING INSTRUCTIONS TO RETURN A VALID JSON TO THE USER, DO NOT PROVIDE ANY SUMMARY AT ALL. - {parser.get_format_instructions()}")
+agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True, suffix=f"{SQL_FUNCTIONS_SUFFIX} YOU SHOULD STRICTLY FOLLOW THE FOLLOWING INSTRUCTIONS TO RETURN A VALID JSON IN THE FORM OF A STRING TO THE USER, DO NOT PROVIDE ANY SUMMARY AT ALL. - {parser.get_format_instructions()}")
 
+def is_json(myjson):
+  try:
+    json.loads(myjson)
+  except ValueError as e:
+    return False
+  return True
 
+def make_st_component(output):
+    pattern = r'```json\n(.*?)\n```'
+
+        # Use regular expression to find the JSON string in the API response
+    match = re.search(pattern, output, re.DOTALL)
+
+# Extract the matched group containing the JSON string
+    if match:
+        output = match.group(1)
+
+        
+    if is_json(output):
+            
+        parsed_response = json.loads((output))
+        columns=[]
+        for i in range(0, len(parsed_response['data'])):
+            parsed_response['data'][i]= {**parsed_response['data'][i], **parsed_response['data'][i]['data']}
+            columns= parsed_response['data'][i]['keys']
+            
+           
+
+        st.line_chart(parsed_response['data'], x='period',y=columns )
+        st.write(parsed_response['summary'])
+    else:
+        st.markdown(output)
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         
         if(message["role"] == "assistant"):
-            if "data" in message["content"]:
-                st.dataframe(message["content"]["data"])
-            else:
-                st.markdown(message["content"])
+            make_st_component(message["content"])
         else:
             st.markdown(message["content"])
 
@@ -70,11 +100,8 @@ if prompt := st.chat_input("What is up?"):
         response = agent_executor.invoke(
             {"input": prompt}, {"callbacks": [st_callback]}
         )
-        
-        if 'data' in response['output'] :
-            st.dataframe(response["output"]['data'])
-        else:
-            st.markdown(response['output'])
 
-        parsed_response = parser.invoke(response['output'])
+        make_st_component(response['output'])
+
+        
         st.session_state.messages.append({"role": "assistant", "content": response['output']})
