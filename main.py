@@ -40,10 +40,10 @@ def get_db():
 
 db = get_db()
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, streaming=True)
+llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True)
 parser = PydanticOutputParser(pydantic_object=Response)
 
-agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True, suffix=f"{SQL_FUNCTIONS_SUFFIX}{parser.get_format_instructions()}")
+agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True, suffix=f"{SQL_FUNCTIONS_SUFFIX} YOU SHOULD STRICTLY FOLLOW THE FOLLOWING INSTRUCTIONS TO RETURN A VALID JSON TO THE USER, DO NOT PROVIDE ANY SUMMARY AT ALL. - {parser.get_format_instructions()}")
 
 
 
