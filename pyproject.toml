@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "crystal-costs"
+version = "0.1.0"
+description = ""
+authors = ["Shubham Pandey <shubhampcpandey13@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+langchain-openai = "^0.1.4"
+langchain = "^0.1.16"
+snowflake-sqlalchemy = "^1.5.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
