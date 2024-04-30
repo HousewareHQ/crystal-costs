@@ -49,8 +49,14 @@ agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
+        
+        if(message["role"] == "assistant"):
+            if "data" in message["content"]:
+                st.dataframe(message["content"]["data"])
+            else:
+                st.markdown(message["content"])
+        else:
+            st.markdown(message["content"])
 
 if prompt := st.chat_input("What is up?"):
    
@@ -65,6 +71,10 @@ if prompt := st.chat_input("What is up?"):
             {"input": prompt}, {"callbacks": [st_callback]}
         )
         
-        st.markdown(response['output'])
+        if 'data' in response['output'] :
+            st.dataframe(response["output"]['data'])
+        else:
+            st.markdown(response['output'])
+
         parsed_response = parser.invoke(response['output'])
         st.session_state.messages.append({"role": "assistant", "content": response['output']})
