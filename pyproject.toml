@@ -10,6 +10,7 @@ python = "^3.12"
 langchain-openai = "^0.1.4"
 langchain = "^0.1.16"
 snowflake-sqlalchemy = "^1.5.3"
+streamlit = "^1.33.0"
 
 
 [build-system]
