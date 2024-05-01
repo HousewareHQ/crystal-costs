@@ -36,7 +36,7 @@ if "messages" not in st.session_state:
 
 snowflake_url = f"snowflake://{username}:{password}@{snowflake_account}/{database}/{schema}?warehouse={warehouse}&role={role}"
 
-@st.cache_resource(ttl="2h")
+@st.cache_resource(ttl="5h")
 def get_db():
     return SQLDatabase.from_uri(snowflake_url,sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
 
@@ -68,14 +68,23 @@ def make_st_component(output):
     if is_json(output):
             
         parsed_response = json.loads((output))
-        columns=[]
+        columns=set()
         for i in range(0, len(parsed_response['data'])):
-            parsed_response['data'][i]= {**parsed_response['data'][i], **parsed_response['data'][i]['data']}
-            columns= parsed_response['data'][i]['keys']
+            parsed_response['data'][i]= {**parsed_response['data'][i], **parsed_response['data'][i]['yAxis']}
+            columns.update(parsed_response['data'][i]['keys'])
             
-           
-
-        st.line_chart(parsed_response['data'], x='period',y=columns )
+        st.write(parsed_response['answer'])
+    
+        columns= list(columns)
+        if parsed_response['chart_type'] == 'line':
+        
+            st.line_chart(parsed_response['data'], x='xAxis',y=columns )
+        elif parsed_response['chart_type'] == 'bar':
+            st.bar_chart(parsed_response['data'], x='xAxis',y=columns )
+        elif parsed_response['chart_type'] == 'area':
+            st.area_chart(parsed_response['data'], x='xAxis',y=columns )
+        else: 
+            st.write("I don't know how to plot this chart")
         st.write(parsed_response['summary'])
     else:
         st.markdown(output)
