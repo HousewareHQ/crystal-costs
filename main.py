@@ -33,6 +33,8 @@ st.write('Get accurate cost analysis using Natural Language')
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I help you today?"}]
 
+if "data" not in st.session_state:
+    st.session_state.data = []
 
 snowflake_url = f"snowflake://{username}:{password}@{snowflake_account}/{database}/{schema}?warehouse={warehouse}&role={role}"
 
@@ -55,39 +57,54 @@ def is_json(myjson):
   return True
 
 def make_st_component(output):
-    pattern = r'```json\n(.*?)\n```'
+    try:
+        pattern = r'```json\n(.*?)\n```'
 
-        # Use regular expression to find the JSON string in the API response
-    match = re.search(pattern, output, re.DOTALL)
+            # Use regular expression to find the JSON string in the API response
+        match = re.search(pattern, output, re.DOTALL)
 
-# Extract the matched group containing the JSON string
-    if match:
-        output = match.group(1)
+    # Extract the matched group containing the JSON string
+        if match:
+            output = match.group(1)
 
+            
+        if is_json(output):
+                
+            parsed_response = json.loads((output))
+            columns=set()
+            for i in range(0, len(parsed_response['data'])):
+                parsed_response['data'][i]= {**parsed_response['data'][i], **parsed_response['data'][i]['yAxis']}
+                columns.update(parsed_response['data'][i]['keys'])
+                
+            st.write(parsed_response['answer'])
         
-    if is_json(output):
-            
-        parsed_response = json.loads((output))
-        columns=set()
-        for i in range(0, len(parsed_response['data'])):
-            parsed_response['data'][i]= {**parsed_response['data'][i], **parsed_response['data'][i]['yAxis']}
-            columns.update(parsed_response['data'][i]['keys'])
-            
-        st.write(parsed_response['answer'])
+            columns= list(columns)
+
+            if(len(parsed_response['data'])!=0):
+                if parsed_response['chart_type'] == 'line':
+                    st.line_chart(parsed_response['data'], x='xAxis',y=columns )
+                elif parsed_response['chart_type'] == 'bar':
+                    st.bar_chart(parsed_response['data'], x='xAxis',y=columns )
+                elif parsed_response['chart_type'] == 'area':
+                    st.area_chart(parsed_response['data'], x='xAxis',y=columns )
+                else: 
+                    st.write("I don't know how to plot this chart")
+                st.write(parsed_response['summary'])
+        else:
+            st.markdown(output)
+
+
+    except Exception as e:
+        st.write(e)
+
+with st.sidebar:
+    st.title('Chat History')
+    st.write("This is the history of the conversation")
     
-        columns= list(columns)
-        if parsed_response['chart_type'] == 'line':
-        
-            st.line_chart(parsed_response['data'], x='xAxis',y=columns )
-        elif parsed_response['chart_type'] == 'bar':
-            st.bar_chart(parsed_response['data'], x='xAxis',y=columns )
-        elif parsed_response['chart_type'] == 'area':
-            st.area_chart(parsed_response['data'], x='xAxis',y=columns )
-        else: 
-            st.write("I don't know how to plot this chart")
-        st.write(parsed_response['summary'])
-    else:
-        st.markdown(output)
+    for data in st.session_state.data:
+        with st.expander(f"User: {data['user']}"):
+            make_st_component(data['assistant'])
+    
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -104,13 +121,15 @@ if prompt := st.chat_input("What is up?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     
+    
     with st.chat_message("assistant"):
         st_callback = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False, thought_labeler=CustomThoughLabeler())
         response = agent_executor.invoke(
-            {"input": prompt}, {"callbacks": [st_callback]}
-        )
-
+                {"input": prompt}, {"callbacks": [st_callback]}
+            )
+        
+        st.session_state.data.append({"user": prompt, "assistant": response['output']})
         make_st_component(response['output'])
+        st.session_state.messages.append({"role": "assistant", "content": response['output']})
 
         
-        st.session_state.messages.append({"role": "assistant", "content": response['output']})
