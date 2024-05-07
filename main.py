@@ -99,7 +99,6 @@ def make_st_component(output):
 
 with st.sidebar:
     st.title('Chat History')
-    st.write("This is the history of the conversation")
     
     for data in st.session_state.data:
         with st.expander(f"User: {data['user']}"):
@@ -114,7 +113,7 @@ for message in st.session_state.messages:
         else:
             st.markdown(message["content"])
 
-if prompt := st.chat_input("What is up?"):
+if prompt := st.chat_input("What is my credit consumption in the last 7 days?"):
    
     st.chat_message("user").markdown(prompt)
     
