@@ -21,47 +21,35 @@ import re
 from agents.snowflake import SnowflakeAgent
 from db.snowflake import Snowflake
 from tools.forecasting import predict_values
-
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 import dotenv
+
+from models.custom_decorator import with_streamlit_context
+from agents.orchestrator import OrchestratorAgent
+
 dotenv.load_dotenv()
 
-username = os.environ["SNOWFLAKE_USERNAME"]
-password = os.environ["SNOWFLAKE_PASSWORD"]
-snowflake_account = os.environ["SNOWFLAKE_ACCOUNT"]
-database = os.environ["SNOWFLAKE_DATABASE"]
-schema = os.environ["SNOWFLAKE_SCHEMA"]
-warehouse = os.environ["SNOWFLAKE_WAREHOUSE"]
-role = os.environ["SNOWFLAKE_ROLE"]
+
 
 st.set_page_config(page_title="CrystalCosts", page_icon="❄️")
 st.title("CrystalCosts")
 st.write('Get accurate cost analysis using Natural Language')
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I help you today?"}]
+    st.session_state.messages = [AIMessage(type='ai', content="Welcome to CrystalCosts, I can help you with your cost analysis")]
 
 if "data" not in st.session_state:
     st.session_state.data = []
 
-snowflake_url = f"snowflake://{username}:{password}@{snowflake_account}/{database}/{schema}?warehouse={warehouse}&role={role}"
-
-@st.cache_resource(ttl="5h")
+@st.cache_resource(ttl='5h')
 def get_db():
-    return SQLDatabase.from_uri(snowflake_url,sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
-
-db = get_db()
+    __connection_uri = Snowflake().get_snowflake_connection_url()
+    return SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
 
 llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True)
 parser = PydanticOutputParser(pydantic_object=Response)
-# __connection_uri = Snowflake().get_snowflake_connection_url()
-# db = SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
-# sql_toolkit = SQLDatabaseToolkit(llm=llm, db=db)
-# # sql_toolkit
+db=get_db()
 
-# toolkit = sql_toolkit.get_tools() + [predict_values]
-
-agent_executor = SnowflakeAgent(llm=llm, parser=parser).get_agent()
-# agent_executor = create_sql_agent(llm, toolkit=toolkit, agent_type="openai-tools", verbose=True, suffix=f"{SQL_FUNCTIONS_SUFFIX} YOU SHOULD STRICTLY FOLLOW THE FOLLOWING INSTRUCTIONS TO RETURN A VALID JSON IN THE FORM OF A STRING TO THE USER, DO NOT PROVIDE ANY SUMMARY AT ALL. - {parser.get_format_instructions()}")
 
 def is_json(myjson):
   try:
@@ -117,35 +105,44 @@ with st.sidebar:
     for data in st.session_state.data:
         with st.expander(f"User: {data['user']}"):
             make_st_component(data['assistant'])
-    
+
+human_assistant_messages={
+    'human':'user',
+    'ai':'assistant'
+}
 
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
+    with st.chat_message(human_assistant_messages[message.type]):
         
-        if(message["role"] == "assistant"):
-            make_st_component(message["content"])
+        if(message.type == "ai"):
+            make_st_component(message.content)
         else:
-            st.markdown(message["content"])
+            st.markdown(message.content)
+
+
+
 
 if prompt := st.chat_input("What is my credit consumption in the last 7 days?"):
    
     st.chat_message("user").markdown(prompt)
     
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append(HumanMessage(type='human',content=prompt))
 
     
     
     with st.chat_message("assistant"):
+        container= st.container()
         st_callback = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False, thought_labeler=CustomThoughLabeler())
-        # response = agent_executor.invoke(
-        #         {"input": prompt}, {"callbacks": [st_callback]}
-        #     )
-        response = agent_executor.invoke(
-            {"messages": prompt}, {"callbacks": [st_callback]}
-        )
+        response= OrchestratorAgent(llm=llm,parser=parser, db=db).run(prompt,[st_callback],st.session_state.messages)
+
+        print('\n\n\n\n')
+        print('Response\n\n')
+        print(response)
+        print('\n\n\n\n')
+        output_to_print = response[-1].content      
         
-        st.session_state.data.append({"user": prompt, "assistant": response['output']})
-        make_st_component(response['output'])
-        st.session_state.messages.append({"role": "assistant", "content": response['output']})
+        st.session_state.data.append({"user": prompt, "assistant": output_to_print})
+        make_st_component(output_to_print)
+        
 
         

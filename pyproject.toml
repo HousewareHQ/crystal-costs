@@ -13,6 +13,7 @@ snowflake-sqlalchemy = "^1.5.3"
 streamlit = "^1.33.0"
 python-dotenv = "^1.0.1"
 prophet = "^1.1.5"
+langgraph = "^0.0.48"
 
 
 [build-system]

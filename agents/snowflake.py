@@ -11,11 +11,12 @@ from tools.forecasting import predict_values
 from datetime import datetime
 
 class SnowflakeAgent:
-    def __init__(self, llm, parser):
+    def __init__(self, llm, parser,db):
         self.llm = llm
         __connection_uri = Snowflake().get_snowflake_connection_url()
         # self.db = SQLDatabase.from_uri(__connection_uri)
-        self.db = SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
+        # self.db = SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
+        self.db=db
         self.sql_toolkit = SQLDatabaseToolkit(llm=self.llm, db=self.db)
         self.parser = parser
     
@@ -28,7 +29,7 @@ class SnowflakeAgent:
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                SQL_PREFIX.format(dialect=self.sql_toolkit.dialect, top_k=25) + "To use the predicting tool, you need to remember to: Provide the data at a day level. The date field should be in format YYYY-MM-DD format. CURRENT DATE IS {current_date}"
+                SQL_PREFIX.format(dialect=self.sql_toolkit.dialect, top_k=25) + "To use the predicting tool, you need to remember to: Provide the data at a day level. The date field should be in format YYYY-MM-DD format. CURRENT DATE IS {current_date}\n\n. Here is your chat history: \n\n{messages}"
             ),
             (
                 "user",
@@ -44,8 +45,8 @@ class SnowflakeAgent:
         ])
 
         agent = (
-            {
-                "instruction": lambda x: x["messages"],
+            {"messages":lambda x: x["messages"],
+                "instruction": lambda x: x["prompt"],
                 "agent_scratchpad": lambda x: format_to_openai_tool_messages(x.get("intermediate_steps", "")),
                 "parse_information": lambda x: self.parser.get_format_instructions(),
                 "current_date": lambda x: datetime.now().strftime("%Y-%m-%d")
