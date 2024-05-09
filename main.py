@@ -18,6 +18,13 @@ from models.custom_thought_labeler import CustomThoughLabeler
 import json
 import re
 
+from agents.snowflake import SnowflakeAgent
+from db.snowflake import Snowflake
+from tools.forecasting import predict_values
+
+import dotenv
+dotenv.load_dotenv()
+
 username = os.environ["SNOWFLAKE_USERNAME"]
 password = os.environ["SNOWFLAKE_PASSWORD"]
 snowflake_account = os.environ["SNOWFLAKE_ACCOUNT"]
@@ -46,8 +53,15 @@ db = get_db()
 
 llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True)
 parser = PydanticOutputParser(pydantic_object=Response)
+# __connection_uri = Snowflake().get_snowflake_connection_url()
+# db = SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
+# sql_toolkit = SQLDatabaseToolkit(llm=llm, db=db)
+# # sql_toolkit
 
-agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True, suffix=f"{SQL_FUNCTIONS_SUFFIX} YOU SHOULD STRICTLY FOLLOW THE FOLLOWING INSTRUCTIONS TO RETURN A VALID JSON IN THE FORM OF A STRING TO THE USER, DO NOT PROVIDE ANY SUMMARY AT ALL. - {parser.get_format_instructions()}")
+# toolkit = sql_toolkit.get_tools() + [predict_values]
+
+agent_executor = SnowflakeAgent(llm=llm, parser=parser).get_agent()
+# agent_executor = create_sql_agent(llm, toolkit=toolkit, agent_type="openai-tools", verbose=True, suffix=f"{SQL_FUNCTIONS_SUFFIX} YOU SHOULD STRICTLY FOLLOW THE FOLLOWING INSTRUCTIONS TO RETURN A VALID JSON IN THE FORM OF A STRING TO THE USER, DO NOT PROVIDE ANY SUMMARY AT ALL. - {parser.get_format_instructions()}")
 
 def is_json(myjson):
   try:
@@ -123,9 +137,12 @@ if prompt := st.chat_input("What is my credit consumption in the last 7 days?"):
     
     with st.chat_message("assistant"):
         st_callback = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False, thought_labeler=CustomThoughLabeler())
+        # response = agent_executor.invoke(
+        #         {"input": prompt}, {"callbacks": [st_callback]}
+        #     )
         response = agent_executor.invoke(
-                {"input": prompt}, {"callbacks": [st_callback]}
-            )
+            {"messages": prompt}, {"callbacks": [st_callback]}
+        )
         
         st.session_state.data.append({"user": prompt, "assistant": response['output']})
         make_st_component(response['output'])
