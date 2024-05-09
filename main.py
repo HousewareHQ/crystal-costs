@@ -27,8 +27,8 @@ warehouse = os.environ["SNOWFLAKE_WAREHOUSE"]
 role = os.environ["SNOWFLAKE_ROLE"]
 
 st.set_page_config(page_title="CrystalCosts", page_icon="❄️")
-st.title("CrystalCosts")
-st.write('Get accurate cost analysis using Natural Language')
+st.title("❄️ CrystalCosts")
+st.write('Get accurate snowflake cost analysis using Natural Language')
 
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I help you today?"}]
