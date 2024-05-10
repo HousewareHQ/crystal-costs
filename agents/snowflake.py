@@ -30,7 +30,7 @@ class SnowflakeAgent:
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                SQL_PREFIX.format(dialect=self.sql_toolkit.dialect, top_k=25) + "To use the predicting tool: Use the exisiting table to figure out what is the name of the timestamp and the column needed for prediction. CURRENT_DATE IS {current_date}\n\n. Here is your chat history: \n\n{messages}"
+                SQL_PREFIX.format(dialect=self.sql_toolkit.dialect, top_k=25) + "To use the predicting tool: Use the existing table to figure out what is the column name of the timestamp and the column needed for prediction. Pass the same to the tool. CURRENT_DATE IS {current_date}\n\n. Here is your chat history: \n\n{messages}"
             ),
             (
                 "user",

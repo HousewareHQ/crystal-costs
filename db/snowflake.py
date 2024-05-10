@@ -1,7 +1,7 @@
 
 import os
 import snowflake.connector as snow
-
+import json
 
 
 class Snowflake:
@@ -56,3 +56,18 @@ class Snowflake:
 
     def __get_model_name(self) -> str:
         return "credit_usage_model_raj"
+    
+    def call_arctic_complete(self, messages):
+        conn = self.get_snowflake_connection()
+        with conn.cursor() as cur:
+            sql = "SELECT snowflake.cortex.complete('snowflake-arctic', " + str(messages) +", {}) AS llm_response"
+            print("DEBUG:", sql)
+            cur.execute(sql)
+            # print("------")
+            # print(cur.fetchall()[0])
+            data = json.loads(cur.fetchall()[0][0])
+            print(data)
+            print(type(data))
+        conn.close()
+
+        return data.get("choices", [{}])[0].get("messages", "")

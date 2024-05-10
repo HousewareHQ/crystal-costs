@@ -1,3 +1,6 @@
+import dotenv
+dotenv.load_dotenv()
+
 from langchain.agents import create_sql_agent
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
@@ -22,12 +25,9 @@ from agents.snowflake import SnowflakeAgent
 from db.snowflake import Snowflake
 from tools.forecasting import predict_values
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
-import dotenv
 
 from models.custom_decorator import with_streamlit_context
 from agents.orchestrator import OrchestratorAgent
-
-dotenv.load_dotenv()
 
 
 
