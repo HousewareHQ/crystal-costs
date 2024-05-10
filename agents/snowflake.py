@@ -26,10 +26,11 @@ class SnowflakeAgent:
     def get_agent(self):
         tools = self.__get_tools()
         llm_with_tools = self.llm.bind_tools(tools)
+        #"To use the predicting tool, you need to remember to: Provide the data at a day level. The date field should be in format YYYY-MM-DD format. CURRENT DATE IS {current_date}"
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                SQL_PREFIX.format(dialect=self.sql_toolkit.dialect, top_k=25) + "To use the predicting tool, you need to remember to: Provide the data at a day level. The date field should be in format YYYY-MM-DD format. CURRENT DATE IS {current_date}\n\n. Here is your chat history: \n\n{messages}"
+                SQL_PREFIX.format(dialect=self.sql_toolkit.dialect, top_k=25) + "To use the predicting tool: Use the exisiting table to figure out what is the name of the timestamp and the column needed for prediction. CURRENT_DATE IS {current_date}\n\n. Here is your chat history: \n\n{messages}"
             ),
             (
                 "user",
@@ -49,7 +50,7 @@ class SnowflakeAgent:
                 "instruction": lambda x: x["prompt"],
                 "agent_scratchpad": lambda x: format_to_openai_tool_messages(x.get("intermediate_steps", "")),
                 "parse_information": lambda x: self.parser.get_format_instructions(),
-                "current_date": lambda x: datetime.now().strftime("%Y-%m-%d")
+                "current_date": lambda x: datetime.now().strftime("%Y-%m-%d"),
             }
             | prompt
             | llm_with_tools
