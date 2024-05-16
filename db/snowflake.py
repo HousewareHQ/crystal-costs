@@ -2,22 +2,25 @@
 import os
 import snowflake.connector as snow
 import json
+import streamlit as st
 
 
 class Snowflake:
-    def __init__(self):
-        self.account = os.environ["SNOWFLAKE_ACCOUNT"]
-        self.user = os.environ["SNOWFLAKE_USERNAME"]
-        self.password = os.environ["SNOWFLAKE_PASSWORD"]
-        self.warehouse = os.environ["SNOWFLAKE_WAREHOUSE"]
-        self.database = os.environ["SNOWFLAKE_DATABASE"]
-        self.schema = os.environ["SNOWFLAKE_SCHEMA"]
-        self.role = os.environ["SNOWFLAKE_ROLE"]
+    def __init__(self, account, username, password, warehouse,  role):
+        self.account = account
+        self.user = username
+        self.password = password
+        self.warehouse = warehouse
+        self.database = 'SNOWFLAKE'
+        self.schema = 'ACCOUNT_USAGE'
+        self.role = role
         
         self.playground_database = "PROD_HOUSEWARE_DEMOS"
         self.playground_schema = "PRODUCT_ANALYTICS_FRIDAY_DEMO"
 
     def get_snowflake_connection_url(self):
+        print('URL')
+        print(st.session_state)
         return f"snowflake://{self.user}:{self.password}@{self.account}/{self.database}/{self.schema}?warehouse={self.warehouse}&role={self.role}"
     
     def get_snowflake_connection(self, playground=False):

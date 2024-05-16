@@ -33,20 +33,30 @@ from agents.orchestrator import OrchestratorAgent
 
 st.set_page_config(page_title="CrystalCosts", page_icon="❄️")
 st.title("❄️ CrystalCosts")
-st.write('Get accurate snowflake cost analysis using Natural Language')
+st.write('Get accurate snowflake cost analysis and forecasting using Natural Language')
+
+with st.sidebar:
+    st.title('Secrets')
+    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+    snowflake_account= st.text_input("Snowflake Account", key="snowflake_account")
+    snowflake_username= st.text_input("Snowflake Username", key="snowflake_username")
+    snowflake_password= st.text_input("Snowflake Password", key="snowflake_password", type="password")
+    snowflake_warehouse= st.text_input("Snowflake Warehouse", key="snowflake_warehouse", value='COMPUTE_WH')
+    snowflake_role= st.text_input("Snowflake Role", key="snowflake_role")
+    
+
 
 if "messages" not in st.session_state:
     st.session_state.messages = [AIMessage(type='ai', content="Welcome to CrystalCosts, I can help you with your cost analysis")]
 
-if "data" not in st.session_state:
-    st.session_state.data = []
 
 @st.cache_resource(ttl='5h')
 def get_db():
-    __connection_uri = Snowflake().get_snowflake_connection_url()
-    return SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
+    if( snowflake_account and snowflake_username and snowflake_password and snowflake_warehouse and snowflake_role):
+        __connection_uri = Snowflake(username=snowflake_username, password=snowflake_password, account=snowflake_account, warehouse=snowflake_warehouse, role=snowflake_role).get_snowflake_connection_url()
+        return SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
 
-llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True)
+llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True, api_key=openai_api_key)
 parser = PydanticOutputParser(pydantic_object=Response)
 db=get_db()
 
@@ -62,10 +72,8 @@ def make_st_component(output):
     try:
         pattern = r'```json\n(.*?)\n```'
 
-            # Use regular expression to find the JSON string in the API response
         match = re.search(pattern, output, re.DOTALL)
 
-    # Extract the matched group containing the JSON string
         if match:
             output = match.group(1)
 
@@ -99,12 +107,6 @@ def make_st_component(output):
     except Exception as e:
         st.write(e)
 
-with st.sidebar:
-    st.title('Chat History')
-    
-    for data in st.session_state.data:
-        with st.expander(f"User: {data['user']}"):
-            make_st_component(data['assistant'])
 
 human_assistant_messages={
     'human':'user',
@@ -123,7 +125,11 @@ for message in st.session_state.messages:
 
 
 if prompt := st.chat_input("What is my credit consumption in the last 7 days?"):
-   
+    
+    if not openai_api_key or not snowflake_account or not snowflake_username or not snowflake_password or not snowflake_warehouse or not snowflake_role:
+        st.info("Please fill in the secrets")
+        st.stop()
+
     st.chat_message("user").markdown(prompt)
     
     st.session_state.messages.append(HumanMessage(type='human',content=prompt))
@@ -135,13 +141,8 @@ if prompt := st.chat_input("What is my credit consumption in the last 7 days?"):
         st_callback = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False, thought_labeler=CustomThoughLabeler())
         response= OrchestratorAgent(llm=llm,parser=parser, db=db).run(prompt,[st_callback],st.session_state.messages)
 
-        print('\n\n\n\n')
-        print('Response\n\n')
-        print(response)
-        print('\n\n\n\n')
         output_to_print = response[-1].content      
         
-        st.session_state.data.append({"user": prompt, "assistant": output_to_print})
         make_st_component(output_to_print)
         
 
