@@ -6,14 +6,14 @@ import streamlit as st
 
 
 class Snowflake:
-    def __init__(self, account, username, password, warehouse,  role):
-        self.account = account
-        self.user = username
-        self.password = password
-        self.warehouse = warehouse
+    def __init__(self):
+        self.account = os.environ.get("SNOWFLAKE_ACCOUNT", "")
+        self.user = os.environ.get("SNOWFLAKE_USER", "")
+        self.password = os.environ.get("SNOWFLAKE_PASSWORD", "")
+        self.warehouse = os.environ.get("SNOWFLAKE_WAREHOUSE", "")
         self.database = 'SNOWFLAKE'
         self.schema = 'ACCOUNT_USAGE'
-        self.role = role
+        self.role = os.environ.get("SNOWFLAKE_ROLE", "")
         
         self.playground_database = "PROD_HOUSEWARE_DEMOS"
         self.playground_schema = "PRODUCT_ANALYTICS_FRIDAY_DEMO"
