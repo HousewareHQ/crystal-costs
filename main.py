@@ -26,7 +26,7 @@ from db.snowflake import Snowflake
 from tools.forecasting import predict_values
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 
-from models.custom_decorator import with_streamlit_context
+
 from agents.orchestrator import OrchestratorAgent
 
 
@@ -48,20 +48,23 @@ def get_db():
 
 with st.sidebar:
     st.title('Secrets')
-    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-    snowflake_account= st.text_input("Snowflake Account", key="snowflake_account")
-    snowflake_username= st.text_input("Snowflake Username", key="snowflake_username")
-    snowflake_password= st.text_input("Snowflake Password", key="snowflake_password", type="password")
-    snowflake_warehouse= st.text_input("Snowflake Warehouse", key="snowflake_warehouse")
-    snowflake_role= st.text_input("Snowflake Role", key="snowflake_role")
+    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password", value=os.environ.get("OPENAI_API_KEY"))
+    snowflake_account= st.text_input("Snowflake Account", key="snowflake_account", value=os.environ.get("SNOWFLAKE_ACCOUNT"))
+    snowflake_username= st.text_input("Snowflake Username", key="snowflake_username", value=    os.environ.get("SNOWFLAKE_USERNAME"))
+    snowflake_password= st.text_input("Snowflake Password", key="snowflake_password", type="password", value=os.environ.get("SNOWFLAKE_PASSWORD"))
+    snowflake_warehouse= st.text_input("Snowflake Warehouse", key="snowflake_warehouse", value=os.environ.get("SNOWFLAKE_WAREHOUSE"))
+    snowflake_role= st.text_input("Snowflake Role", key="snowflake_role", value=os.environ.get("SNOWFLAKE_ROLE"))
 
-    os.environ["SNOWFLAKE_ACCOUNT"] = snowflake_account
-    os.environ["SNOWFLAKE_USER"] = snowflake_username
-    os.environ["SNOWFLAKE_PASSWORD"] = snowflake_password
-    os.environ["SNOWFLAKE_WAREHOUSE"] = snowflake_warehouse
-    os.environ["SNOWFLAKE_ROLE"] = snowflake_role
+
+    
     
     if openai_api_key and snowflake_account and snowflake_username and snowflake_role and snowflake_password and snowflake_warehouse:
+
+        os.environ["SNOWFLAKE_ACCOUNT"] = snowflake_account
+        os.environ["SNOWFLAKE_USER"] = snowflake_username
+        os.environ["SNOWFLAKE_PASSWORD"] = snowflake_password
+        os.environ["SNOWFLAKE_WAREHOUSE"] = snowflake_warehouse
+        os.environ["SNOWFLAKE_ROLE"] = snowflake_role
         llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True, api_key=openai_api_key)
         parser = PydanticOutputParser(pydantic_object=Response)
         db=get_db()

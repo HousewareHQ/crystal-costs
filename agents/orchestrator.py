@@ -1,12 +1,11 @@
 
-from agents.conversational_agent import conversation_runnable, get_snowflake_arctic_results
+from agents.conversational_agent import get_snowflake_arctic_results
 from agents.snowflake import SnowflakeAgent
 from langchain_core.messages import AIMessage
 
 
 class OrchestratorAgent:
     def __init__(self, llm,parser, db):
-        self.conversation_agent=conversation_runnable
         self.snowflake_agent=SnowflakeAgent(llm=llm, parser=parser, db=db).get_agent()
 
     def run(self, prompt, callbacks, messages):
