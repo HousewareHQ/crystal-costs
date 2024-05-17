@@ -2,8 +2,6 @@
 import os
 import snowflake.connector as snow
 import json
-import streamlit as st
-
 
 class Snowflake:
     def __init__(self):
@@ -19,8 +17,6 @@ class Snowflake:
         self.playground_schema = "PRODUCT_ANALYTICS_FRIDAY_DEMO"
 
     def get_snowflake_connection_url(self):
-        print('URL')
-        print(st.session_state)
         return f"snowflake://{self.user}:{self.password}@{self.account}/{self.database}/{self.schema}?warehouse={self.warehouse}&role={self.role}"
     
     def get_snowflake_connection(self, playground=False):
@@ -64,13 +60,9 @@ class Snowflake:
         conn = self.get_snowflake_connection()
         with conn.cursor() as cur:
             sql = "SELECT snowflake.cortex.complete('snowflake-arctic', " + str(messages) +", {}) AS llm_response"
-            print("DEBUG:", sql)
+          
             cur.execute(sql)
-            # print("------")
-            # print(cur.fetchall()[0])
             data = json.loads(cur.fetchall()[0][0])
-            print(data)
-            print(type(data))
         conn.close()
 
         return data.get("choices", [{}])[0].get("messages", "")

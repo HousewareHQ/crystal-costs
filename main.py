@@ -1,34 +1,21 @@
 import dotenv
-dotenv.load_dotenv()
-
 from langchain.agents import create_sql_agent
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.callbacks.streamlit import (
-    StreamlitCallbackHandler,LLMThoughtLabeler
+    StreamlitCallbackHandler
 )
 from langchain.output_parsers import PydanticOutputParser
-
 import os
 import streamlit as st
 from models.response import Response
-from langchain_community.agent_toolkits import SQLDatabaseToolkit
-
-from langchain_community.agent_toolkits.sql.prompt import (
-    SQL_FUNCTIONS_SUFFIX,
-)
 from models.custom_thought_labeler import CustomThoughLabeler
 import json
 import re
-
-from agents.snowflake import SnowflakeAgent
 from db.snowflake import Snowflake
-from tools.forecasting import predict_values
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
-
-
+from langchain_core.messages import HumanMessage, AIMessage
 from agents.orchestrator import OrchestratorAgent
-
+dotenv.load_dotenv()
 
 
 st.set_page_config(page_title="CrystalCosts", page_icon="❄️")
@@ -39,10 +26,9 @@ st.write('Get accurate snowflake cost analysis and forecasting using Natural Lan
 @st.cache_resource(ttl='5h')
 def get_db():
     if( snowflake_account and snowflake_username and snowflake_password and snowflake_warehouse and snowflake_role):
-        # __connection_uri = Snowflake(username=snowflake_username, password=snowflake_password, account=snowflake_account, warehouse=snowflake_warehouse, role=snowflake_role).get_snowflake_connection_url()
         connection_uri = Snowflake().get_snowflake_connection_url()
         db = SQLDatabase.from_uri(connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
-        print("DEBUG", db)
+
         return db
 
 

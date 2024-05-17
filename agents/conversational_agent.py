@@ -32,9 +32,6 @@ def convert_into_snowflake_messages(messages):
 def get_snowflake_arctic_results(messages) -> str:
     sf = Snowflake()
     converted_to_sf_messages = convert_into_snowflake_messages( messages)
-    
-    print("DEBUG (SNOWFLAKE):", converted_to_sf_messages)
     pred = sf.call_arctic_complete(converted_to_sf_messages)
-    print("DEBUG (SNOWFLAKE): ", pred)
     return pred
 
