@@ -13,8 +13,8 @@ class Snowflake:
         self.schema = 'ACCOUNT_USAGE'
         self.role = os.environ.get("SNOWFLAKE_ROLE", "")
         
-        self.playground_database = "PROD_HOUSEWARE_DEMOS"
-        self.playground_schema = "PRODUCT_ANALYTICS_FRIDAY_DEMO"
+        self.playground_database = "PREDICTION_ARCTIC_DB"
+        self.playground_schema = "WAREHOUSE_METERING_PREDICTIONS"
 
     def get_snowflake_connection_url(self):
         return f"snowflake://{self.user}:{self.password}@{self.account}/{self.database}/{self.schema}?warehouse={self.warehouse}&role={self.role}"
@@ -54,7 +54,7 @@ class Snowflake:
             conn.close()
 
     def __get_model_name(self) -> str:
-        return "credit_usage_model_raj"
+        return "credit_usage_model"
     
     def call_arctic_complete(self, messages):
         conn = self.get_snowflake_connection()
