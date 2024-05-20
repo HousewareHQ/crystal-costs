@@ -1,9 +1,3 @@
-from langchain.prompts import (
-    ChatPromptTemplate,
-    SystemMessagePromptTemplate,
-    MessagesPlaceholder,
-)
-from langchain_openai import ChatOpenAI
 from db.snowflake import Snowflake
 
 prompt_initial = """
@@ -19,16 +13,6 @@ prompt_initial = """
             ###
         """
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        SystemMessagePromptTemplate.from_template(prompt_initial),
-        MessagesPlaceholder(variable_name="messages"),
-    ]
-)
-
-print("DEBUG: ", prompt)
-model = ChatOpenAI(temperature=0, streaming=True, model="gpt-4-turbo")
-conversation_runnable = prompt | model
 
 
 def convert_into_snowflake_messages(messages):
@@ -47,10 +31,7 @@ def convert_into_snowflake_messages(messages):
 
 def get_snowflake_arctic_results(messages) -> str:
     sf = Snowflake()
-    converted_to_sf_messages = convert_into_snowflake_messages(messages)
-    
-    print("DEBUG (SNOWFLAKE):", converted_to_sf_messages)
+    converted_to_sf_messages = convert_into_snowflake_messages( messages)
     pred = sf.call_arctic_complete(converted_to_sf_messages)
-    print("DEBUG (SNOWFLAKE): ", pred)
     return pred
 

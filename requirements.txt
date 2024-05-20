@@ -1,0 +1,11 @@
+snowflake-connector-python
+streamlit
+langchain
+langchain-community
+langchain-core
+langchain-openai
+langchain-text-splitters
+python-dotenv
+prophet
+snowflake-sqlalchemy
+sqlalchemy
