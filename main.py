@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 st.set_page_config(page_title="CrystalCosts", page_icon="❄️", layout='wide')
 st.title("❄️ CrystalCosts")
-st.write('Get accurate snowflake cost analysis and forecasting using Natural Language')
+st.write('Get accurate snowflake cost analysis and forecasting using natural language!')
 
 
 load_dotenv()
@@ -41,7 +41,7 @@ with st.sidebar:
     snowflake_warehouse= st.text_input("Snowflake Warehouse", key="snowflake_warehouse", value=os.environ.get("SNOWFLAKE_WAREHOUSE"))
     snowflake_role= st.text_input("Snowflake Role", key="snowflake_role", value=os.environ.get("SNOWFLAKE_ROLE"))
 
-
+    st.info('Note - For using the forecasting tool, please follow the instructions mentioned [here](https://github.com/HousewareHQ/crystal-costs?tab=readme-ov-file#prerequisites)')
     
     
     if openai_api_key and snowflake_account and snowflake_username and snowflake_role and snowflake_password and snowflake_warehouse:
