@@ -7,3 +7,5 @@ langchain-openai
 langchain-text-splitters
 python-dotenv
 prophet
+snowflake-sqlalchemy
+sqlalchemy
