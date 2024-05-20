@@ -9,8 +9,8 @@ class ForecastingTool:
         self.prophet = Prophet()
         self.sf = Snowflake()
 
-    def sf_forecast_call(self, timestamp_column, value_column, days):
-        return self.sf.sf_forecast_call(timestamp_column, value_column, days)
+    def sf_forecast_call(self, timestamp_column, value_column, warehouse_column, warehouse_name, days):
+        return self.sf.sf_forecast_call(timestamp_column, value_column, warehouse_column, warehouse_name, days)
 
     def forecast_call(self, data, days):
         df = pd.DataFrame(data)
@@ -24,11 +24,12 @@ class ForecastingTool:
 
 
 @tool("predict_values")
-def predict_values(timestamp_column, value_column, days):
+def predict_values(timestamp_column, value_column, warehouse_column, warehouse_name, days):
     """
-        Use this tool to predict or forecast the next n days value. This tool hits snowflake and makes use of snowflake forecasting the vlaues
+        Use this tool to predict or forecast the next n days value. This tool hits snowflake and makes use of snowflake forecasting the values
+        BEFORE USING THIS TOOL, YOU NEED TO CALL THE LIST TABLES AND VIEW SCHEMA OF THE TABLE. DO NOT CALL THIS TOOL FIRST ITSELF.
     """
-    return ForecastingTool().sf_forecast_call(timestamp_column, value_column, days)
+    return ForecastingTool().sf_forecast_call(timestamp_column, value_column, warehouse_column, warehouse_name, days)
 
 
 
