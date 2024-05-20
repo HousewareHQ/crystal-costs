@@ -4,18 +4,13 @@ from langchain.agents.format_scratchpad.openai_tools import format_to_openai_too
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 from langchain.agents import AgentExecutor
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
-from db.snowflake import Snowflake
-from langchain_community.utilities import SQLDatabase
-from langchain_community.agent_toolkits.sql.prompt import SQL_PREFIX, SQL_FUNCTIONS_SUFFIX
+from langchain_community.agent_toolkits.sql.prompt import SQL_PREFIX
 from tools.forecasting import predict_values
 from datetime import datetime
 
 class SnowflakeAgent:
     def __init__(self, llm, parser,db):
         self.llm = llm
-        __connection_uri = Snowflake().get_snowflake_connection_url()
-        # self.db = SQLDatabase.from_uri(__connection_uri)
-        # self.db = SQLDatabase.from_uri(__connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
         self.db=db
         self.sql_toolkit = SQLDatabaseToolkit(llm=self.llm, db=self.db)
         self.parser = parser

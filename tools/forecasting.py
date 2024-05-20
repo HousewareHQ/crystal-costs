@@ -19,14 +19,8 @@ class ForecastingTool:
         self.prophet.fit(df)
         future = self.prophet.make_future_dataframe(periods=days)
         forecast = self.prophet.predict(future)
-        print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
         return forecast[["ds", "yhat"]]
     
-# @tool("predict_values")
-# def predict_values(data, days):
-#     """Use this tool to predict the values of next n days. data needs to be given in [{'ds': 'value', 'y': value}, {'ds': 'value', 'y': value}, {'ds': 'value', 'y': value}].
-#     """
-#     return ForecastingTool().forecast_call(data, days)
 
 
 @tool("predict_values")
