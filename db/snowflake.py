@@ -34,23 +34,12 @@ class Snowflake:
             conn = self.get_snowflake_connection(playground=True)
             model_name = self.__get_model_name()
             with conn.cursor() as cur: 
-                # create_model_query = f"""
-                #     CREATE OR REPLACE SNOWFLAKE.ML.FORECAST {model_name}(
-                #         INPUT_DATA => SYSTEM$REFERENCE('VIEW', '{self.__get_view_name(warehouse_name=warehouse_name)}'),
-                #         {"SERIES_COLUMNAME => '" + warehouse_name + "'" if warehouse_name else ""}
-                #         TIMESTAMP_COLNAME => '{timestamp_column}',
-                #         TARGET_COLNAME => '{value_column}'
-                #     )
-                # """
                 create_model_query = self.__get_model_create_sql(model_name, timestamp_column, value_column, warehouse_column, warehouse_name)
                 print(create_model_query)
                 inference_query = f"CALL {model_name}!FORECAST(FORECASTING_PERIODS => {days});"
-                # if warehouse_name:
-                #     inference_query = f"CALL {model_name}!FORECAST(SERIES_VALUE => '{warehouse_name}', FORECASTING_PERIODS => {days});"
                 drop_model = f"DROP SNOWFLAKE.ML.FORECAST {model_name}"
 
                 _ = cur.execute(create_model_query)
-                # data = cur.execute(inference_query).fetchall()
                 data = cur.execute(inference_query).fetchall()
                 cleaned_data = []
                 if warehouse_name:
@@ -72,19 +61,12 @@ class Snowflake:
         # if warehouse_name:
         return f"""
             CREATE OR REPLACE SNOWFLAKE.ML.FORECAST {model_name}(
-                INPUT_DATA => SYSTEM$REFERENCE('VIEW', '{self.__get_view_name(warehouse_name=warehouse_name)}'),
+                INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'credit_usage_view'),
                 SERIES_COLNAME => '{warehouse_column}',
                 TIMESTAMP_COLNAME => '{timestamp_column}',
                 TARGET_COLNAME => '{value_column}'
             )
         """
-        # return f"""
-        #         CREATE OR REPLACE SNOWFLAKE.ML.FORECAST {model_name}(
-        #             INPUT_DATA => SYSTEM$REFERENCE('VIEW', '{self.__get_view_name(warehouse_name=warehouse_name)}'),
-        #             TIMESTAMP_COLNAME => '{timestamp_column}',
-        #             TARGET_COLNAME => '{value_column}'
-        #         )
-        #     """
         
     def __get_model_name(self) -> str:
         return "credit_usage_model"
