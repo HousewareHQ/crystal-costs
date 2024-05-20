@@ -33,6 +33,10 @@ Note: Forecasting features will not work correctly if these steps are not follow
 
 Crystal Costs leverages the power of AI to provide Snowflake admins with insights into their credit consumption, making it easier to monitor and forecast costs. By following the prerequisites, admins can ensure accurate forecasting and take full advantage of the tool's capabilities.
 
+### Secrets Management
+
+If you want to skip the step of manually adding your secrets in the UI each time you start the app, you can copy the `.env.sample` file and create your own `.env` file, the variables stored here will then be used as the secrets 
+
 ## Acknowledgements
 
 We would like to thank the Snowflake community and the Streamlit community for their support and contributions.
