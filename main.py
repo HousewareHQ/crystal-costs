@@ -20,6 +20,14 @@ st.set_page_config(page_title="CrystalCosts", page_icon="❄️", layout='wide')
 st.title("❄️ CrystalCosts")
 st.write('Get accurate snowflake cost analysis and forecasting using natural language!')
 
+if "suggestion" not in st.session_state:
+    st.session_state.suggestion = None
+
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [AIMessage(type='ai', content="Welcome to CrystalCosts, I can help you with your cost analysis")]
+
+
 
 load_dotenv()
 
@@ -54,10 +62,6 @@ with st.sidebar:
         llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True, api_key=openai_api_key)
         parser = PydanticOutputParser(pydantic_object=Response)
         db=get_db()
-
-
-if "messages" not in st.session_state:
-    st.session_state.messages = [AIMessage(type='ai', content="Welcome to CrystalCosts, I can help you with your cost analysis")]
 
 
 
@@ -114,36 +118,64 @@ human_assistant_messages={
     'ai':'assistant'
 }
 
-for message in st.session_state.messages:
-    with st.chat_message(human_assistant_messages[message.type]):
+messages_container=st.container()
+with messages_container:
+    for message in st.session_state.messages:
+        with st.chat_message(human_assistant_messages[message.type]):
+            if(message.type == "ai"):
+                make_st_component(message.content)
+            else:
+                st.markdown(message.content)
+
+
+
+suggestions_container=st.empty()
+with suggestions_container:
+
+    with st.container():
+        def set_query(suggestion):
+            st.session_state.suggestion = suggestion
+
+        st.markdown(f'<p style="height:40vh"></p>', unsafe_allow_html = True)
+        suggestions=[
+            'Give me a daily trend of credit consumption in last 7 days',
+            'Predict the credit consumption for the next 3 days',
+            'Show me the breakdown of credit consumption by warehouse today',
+        ]
         
-        if(message.type == "ai"):
-            make_st_component(message.content)
-        else:
-            st.markdown(message.content)
+        columns=st.columns(len(suggestions))
+        for i, column in enumerate(columns):
+            with column:
+                st.button(suggestions[i], on_click=set_query, args=[suggestions[i]])
+       
+        
 
 
+if prompt := st.chat_input("What's my credit consumption today?") or st.session_state.suggestion is not None:
 
-
-if prompt := st.chat_input("What is my credit consumption in the last 7 days?"):
+    user_query=st.session_state.suggestion if st.session_state.suggestion else prompt
+  
     
     if not openai_api_key or not snowflake_account or not snowflake_username or not snowflake_password or not snowflake_warehouse or not snowflake_role:
-        st.info("Please fill in the secrets")
+        messages_container.info("Please fill in the secrets")
         st.stop()
 
-    st.chat_message("user").markdown(prompt)
-    st.session_state.messages.append(HumanMessage(type='human',content=prompt))
+    suggestions_container.empty()
+    st.session_state.suggestion = None
+
+    messages_container.chat_message("user").markdown(user_query)
+    st.session_state.messages.append(HumanMessage(type='human',content=user_query))
 
     
-    
-    with st.chat_message("assistant"):
-        container= st.container()
-        st_callback = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False, thought_labeler=CustomThoughLabeler())
-        response= OrchestratorAgent(llm=llm,parser=parser, db=db).run(prompt,[st_callback],st.session_state.messages)
+    with messages_container:
+        with st.chat_message("assistant"):
+            st_callback = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False, thought_labeler=CustomThoughLabeler())
+            response= OrchestratorAgent(llm=llm,parser=parser, db=db).run(user_query,[st_callback],st.session_state.messages)
 
-        output_to_print = response[-1].content      
-        
-        make_st_component(output_to_print)
-        
+            output_to_print = response[-1].content      
+            
+            
+            make_st_component(output_to_print)
+            
 
         
