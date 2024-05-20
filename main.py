@@ -1,4 +1,3 @@
-import dotenv
 from langchain.agents import create_sql_agent
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
@@ -15,13 +14,15 @@ import re
 from db.snowflake import Snowflake
 from langchain_core.messages import HumanMessage, AIMessage
 from agents.orchestrator import OrchestratorAgent
-dotenv.load_dotenv()
+from dotenv import load_dotenv
 
 
 st.set_page_config(page_title="CrystalCosts", page_icon="❄️", layout='wide')
 st.title("❄️ CrystalCosts")
 st.write('Get accurate snowflake cost analysis and forecasting using Natural Language')
 
+
+load_dotenv()
 
 @st.cache_resource(ttl='5h')
 def get_db():
