@@ -18,7 +18,7 @@ from agents.orchestrator import OrchestratorAgent
 dotenv.load_dotenv()
 
 
-st.set_page_config(page_title="CrystalCosts", page_icon="❄️")
+st.set_page_config(page_title="CrystalCosts", page_icon="❄️", layout='wide')
 st.title("❄️ CrystalCosts")
 st.write('Get accurate snowflake cost analysis and forecasting using Natural Language')
 
