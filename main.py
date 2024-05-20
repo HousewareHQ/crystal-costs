@@ -1,4 +1,3 @@
-from langchain.agents import create_sql_agent
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.callbacks.streamlit import (
