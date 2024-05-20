@@ -140,7 +140,7 @@ with suggestions_container:
         suggestions=[
             'Give me a daily trend of credit consumption in last 7 days',
             'Predict the credit consumption for the next 3 days',
-            'Show me the breakdown of credit consumption by warehouse today',
+            'Compare credit consumption by all warehouses yesterday',
         ]
         
         columns=st.columns(len(suggestions))
