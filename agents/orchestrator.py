@@ -5,11 +5,12 @@ from langchain_core.messages import AIMessage
 
 
 class OrchestratorAgent:
-    def __init__(self, llm,parser, db):
+    def __init__(self, llm,parser, db, sf):
         self.snowflake_agent=SnowflakeAgent(llm=llm, parser=parser, db=db).get_agent()
+        self.sf = sf
 
     def run(self, prompt, callbacks, messages):
-        conversation_response = get_snowflake_arctic_results(messages)
+        conversation_response = get_snowflake_arctic_results(messages, self.sf)
         
         if "Looking up data for this" in conversation_response:
 
