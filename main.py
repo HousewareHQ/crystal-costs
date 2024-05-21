@@ -25,7 +25,7 @@ if "suggestion" not in st.session_state:
 
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [AIMessage(type='ai', content="Welcome to CrystalCosts, I can help you with your cost analysis")]
+    st.session_state.messages = [AIMessage(type='ai', content="Welcome to CrystalCosts, How can I help you today?")]
 
 
 
