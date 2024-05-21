@@ -29,12 +29,10 @@ if "messages" not in st.session_state:
 
 
 
-load_dotenv()
-
 @st.cache_resource(ttl='5h')
-def get_db():
+def get_db(account, username, password, warehouse, role):
     if( snowflake_account and snowflake_username and snowflake_password and snowflake_warehouse and snowflake_role):
-        connection_uri = Snowflake().get_snowflake_connection_url()
+        connection_uri = Snowflake(account, username, password, warehouse, role).get_snowflake_connection_url()
         db = SQLDatabase.from_uri(connection_uri, sample_rows_in_table_info=1, include_tables=['query_history','warehouse_metering_history'], view_support=True)
 
         return db
@@ -42,26 +40,26 @@ def get_db():
 
 with st.sidebar:
     st.title('Secrets')
-    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password", value=os.environ.get("OPENAI_API_KEY"))
-    snowflake_account= st.text_input("Snowflake Account", key="snowflake_account", value=os.environ.get("SNOWFLAKE_ACCOUNT"))
-    snowflake_username= st.text_input("Snowflake Username", key="snowflake_username", value=    os.environ.get("SNOWFLAKE_USERNAME"))
-    snowflake_password= st.text_input("Snowflake Password", key="snowflake_password", type="password", value=os.environ.get("SNOWFLAKE_PASSWORD"))
-    snowflake_warehouse= st.text_input("Snowflake Warehouse", key="snowflake_warehouse", value=os.environ.get("SNOWFLAKE_WAREHOUSE"))
-    snowflake_role= st.text_input("Snowflake Role", key="snowflake_role", value=os.environ.get("SNOWFLAKE_ROLE"))
+    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+    snowflake_account= st.text_input("Snowflake Account", key="snowflake_account")
+    snowflake_username= st.text_input("Snowflake Username", key="snowflake_username")
+    snowflake_password= st.text_input("Snowflake Password", key="snowflake_password", type="password")
+    snowflake_warehouse= st.text_input("Snowflake Warehouse", key="snowflake_warehouse")
+    snowflake_role= st.text_input("Snowflake Role", key="snowflake_role")
 
     st.info('Note - For using the forecasting tool, please follow the instructions mentioned [here](https://github.com/HousewareHQ/crystal-costs?tab=readme-ov-file#prerequisites)')
     
-    
     if openai_api_key and snowflake_account and snowflake_username and snowflake_role and snowflake_password and snowflake_warehouse:
-
-        os.environ["SNOWFLAKE_ACCOUNT"] = snowflake_account
-        os.environ["SNOWFLAKE_USER"] = snowflake_username
-        os.environ["SNOWFLAKE_PASSWORD"] = snowflake_password
-        os.environ["SNOWFLAKE_WAREHOUSE"] = snowflake_warehouse
-        os.environ["SNOWFLAKE_ROLE"] = snowflake_role
-        llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, streaming=True, api_key=openai_api_key)
+        st.session_state.snowflake_credentials = {
+            "snowflake_account": snowflake_account,
+            "snowflake_username": snowflake_username,
+            "snowflake_password": snowflake_password,
+            "snowflake_warehouse": snowflake_warehouse,
+            "snowflake_role": snowflake_role
+        }
+        llm = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True, api_key=openai_api_key)
         parser = PydanticOutputParser(pydantic_object=Response)
-        db=get_db()
+        db=get_db(snowflake_account, snowflake_username, snowflake_password, snowflake_warehouse, snowflake_role)
 
 
 
@@ -166,11 +164,10 @@ if prompt := st.chat_input("What's my credit consumption today?") or st.session_
     messages_container.chat_message("user").markdown(user_query)
     st.session_state.messages.append(HumanMessage(type='human',content=user_query))
 
-    
     with messages_container:
         with st.chat_message("assistant"):
             st_callback = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False, thought_labeler=CustomThoughLabeler())
-            response= OrchestratorAgent(llm=llm,parser=parser, db=db).run(user_query,[st_callback],st.session_state.messages)
+            response= OrchestratorAgent(llm=llm,parser=parser, db=db, sf=Snowflake(**st.session_state.snowflake_credentials)).run(prompt,[st_callback],st.session_state.messages)
 
             output_to_print = response[-1].content      
             

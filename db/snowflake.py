@@ -4,20 +4,21 @@ import snowflake.connector as snow
 import json
 
 class Snowflake:
-    def __init__(self):
-        self.account = os.environ.get("SNOWFLAKE_ACCOUNT", "")
-        self.user = os.environ.get("SNOWFLAKE_USER", "")
-        self.password = os.environ.get("SNOWFLAKE_PASSWORD", "")
-        self.warehouse = os.environ.get("SNOWFLAKE_WAREHOUSE", "")
+    def __init__(self, snowflake_account, snowflake_username, snowflake_password, snowflake_warehouse, snowflake_role):
+        self.account = snowflake_account
+        self.user = snowflake_username
+        self.password = snowflake_password
+        self.warehouse = snowflake_warehouse
         self.database = 'SNOWFLAKE'
         self.schema = 'ACCOUNT_USAGE'
-        self.role = os.environ.get("SNOWFLAKE_ROLE", "")
+        self.role = snowflake_role
         
         self.playground_database = "PREDICTION_ARCTIC_DB"
         self.playground_schema = "WAREHOUSE_METERING_PREDICTIONS"
 
     def get_snowflake_connection_url(self):
-        return f"snowflake://{self.user}:{self.password}@{self.account}/{self.database}/{self.schema}?warehouse={self.warehouse}&role={self.role}"
+        s = f"snowflake://{self.user}:{self.password}@{self.account}/{self.database}/{self.schema}?warehouse={self.warehouse}&role={self.role}"
+        return s
     
     def get_snowflake_connection(self, playground=False):
         return snow.connect(
@@ -49,7 +50,6 @@ class Snowflake:
                             cleaned_data.append(data)
                 else:
                     cleaned_data = data
-                print("DEBUG (SNOWFLAE ML):", cleaned_data)
                 _ = cur.execute(drop_model)
                 return cleaned_data
         except Exception as e:

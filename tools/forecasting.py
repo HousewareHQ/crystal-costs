@@ -2,12 +2,12 @@ import pandas as pd
 from prophet import Prophet
 from langchain.agents import tool
 from db.snowflake import Snowflake
-
+import streamlit as st
 
 class ForecastingTool:
     def __init__(self):
         self.prophet = Prophet()
-        self.sf = Snowflake()
+        self.sf = Snowflake(**st.session_state.snowflake_credentials)
 
     def sf_forecast_call(self, timestamp_column, value_column, warehouse_column, warehouse_name, days):
         return self.sf.sf_forecast_call(timestamp_column, value_column, warehouse_column, warehouse_name, days)
@@ -21,7 +21,6 @@ class ForecastingTool:
         forecast = self.prophet.predict(future)
         return forecast[["ds", "yhat"]]
     
-
 
 @tool("predict_values")
 def predict_values(timestamp_column, value_column, warehouse_column, warehouse_name, days):
